@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Pac-Man Delete",
+  "version": "0.1.0",
+  "description": "Pac-Man chomps the characters you backspace, on any web page.",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
+}
