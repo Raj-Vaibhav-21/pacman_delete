@@ -83,3 +83,29 @@
   top: 12%;
   right: 12%;
 }
+
+/* --- Angry state: red body + 💢 mark -------------------------------------
+   Applied when Backspace has been held past the anger threshold. No
+   transition — anger snaps on instantly. The bigger size is handled in JS. */
+.__pmd_angry .__pmd_jaw,
+.__pmd_angry .__pmd_tooth {
+  background: #e23b2e;
+}
+
+/* The 💢 mark sits just above his head. font-size is 0.5em, and JS sets the
+   container's font-size to its pixel size, so the mark scales with Pac-Man. */
+.__pmd_anger_mark {
+  position: absolute;
+  top: -18%;
+  right: 0;
+  font-size: 0.5em;
+  line-height: 1;
+  opacity: 0;
+  z-index: 7;
+  pointer-events: none;
+  user-select: none;
+}
+
+.__pmd_angry .__pmd_anger_mark {
+  opacity: 1;
+}

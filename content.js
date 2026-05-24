@@ -1,17 +1,16 @@
 (() => {
   const STEP_MS = 200;
   const MAX_QUEUE = 20;
+  const ANGRY_MS = 1500;     // hold Backspace this long -> Pac-Man gets angry
+  const ANGRY_SCALE = 1.35;  // angry Pac-Man is this much bigger than normal
 
-  // `committedQueue` counts chomps the user explicitly asked for via a fresh
-  // keypress — these MUST complete. `totalQueue` is everything still to be
-  // processed (committed + speculative self-fed). The difference matters at
-  // release time: an in-flight chomp can be cancelled only if it's NOT
-  // committed.
+
   let committedQueue = 0;
   let totalQueue = 0;
   let animating = false;
   let activeEl = null;
   let backspaceHeld = false;
+  let holdStart = null;      // timestamp of the first keydown of the current hold
 
   // Handles to the in-flight chomp so keyup can cancel it.
   let chompTimeout = null;
@@ -270,7 +269,8 @@
         '<span class="__pmd_tooth" style="left:29%"></span>',
         '<span class="__pmd_tooth" style="left:43%"></span>',
       '</span>',
-      '<span class="__pmd_eye"></span>'
+      '<span class="__pmd_eye"></span>',
+      '<span class="__pmd_anger_mark">\uD83D\uDCA2</span>' // 💢, hidden via CSS unless angry
     ].join('');
     return pac;
   }
@@ -292,9 +292,8 @@
     const el = e.target;
     if (!isEditable(el)) return;
 
-    // Already operating on this element — every fresh tap (not auto-repeat)
-    // is a new committed chomp. Auto-repeats are filtered: we never let the
-    // OS's repeat rate fill our queue.
+    if (!e.repeat) holdStart = performance.now();
+
     if (el === activeEl && (animating || totalQueue > 0)) {
       const ch = peekCharBeforeCaret(el);
       if (!ch) {
@@ -332,11 +331,13 @@
   document.addEventListener('keyup', (e) => {
     if (e.key !== 'Backspace') return;
     backspaceHeld = false;
+    holdStart = null;
     abortInFlightIfSpeculative();
   }, true);
 
   window.addEventListener('blur', () => {
     backspaceHeld = false;
+    holdStart = null;
     abortInFlightIfSpeculative();
   }, true);
 
@@ -373,10 +374,17 @@
       return;
     }
 
-    const size = Math.max(16, caretRect.height * 1.15);
+    // Angry once Backspace has been held past ANGRY_MS: bigger body, red,
+    // with a 💢 mark. Computed per chomp, so he flips exactly on threshold.
+    const angry = holdStart !== null && (performance.now() - holdStart >= ANGRY_MS);
+
+    const baseSize = Math.max(16, caretRect.height * 1.15);
+    const size = angry ? baseSize * ANGRY_SCALE : baseSize;
     const pac = buildPacman();
+    if (angry) pac.classList.add('__pmd_angry');
     pac.style.width = size + 'px';
     pac.style.height = size + 'px';
+    pac.style.fontSize = size + 'px';   // lets the 💢 mark size itself in em
     pac.style.top = (caretRect.top + caretRect.height / 2 - size / 2) + 'px';
     pac.style.left = (caretRect.left - size * 0.1) + 'px';
     document.body.appendChild(pac);
